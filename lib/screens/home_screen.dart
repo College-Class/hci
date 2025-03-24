@@ -6,8 +6,6 @@ import '../providers/home_provider.dart';
 import '../models/device_model.dart';
 import '../models/room_model.dart';
 import '../models/group_model.dart';
-import '../widgets/device_card.dart';
-import '../widgets/room_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -947,6 +945,33 @@ class _HomeScreenState extends State<HomeScreen>
               _showLineChart
                   ? _buildLineChart(data, maxConsumption)
                   : _buildBarChart(data, maxConsumption),
+        ),
+
+        // AI recommendation
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.lightbulb_outline, color: AppColors.primaryBlue),
+              const SizedBox(width: 8),
+              Text(
+                'AI Recommendation: Turn off unused devices to save energy',
+                style: TextStyle(color: AppColors.primaryBlue, fontSize: 14),
+              ),
+            ],
+          ),
         ),
       ],
     );
