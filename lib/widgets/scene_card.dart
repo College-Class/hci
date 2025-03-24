@@ -1,13 +1,52 @@
 import 'package:flutter/material.dart';
 import '../constants/app_constants.dart';
 import '../models/scene_model.dart';
+import '../models/group_model.dart';
 import '../providers/home_provider.dart';
 import 'package:provider/provider.dart';
 
+class Scene {
+  final String id;
+  final String name;
+  final TimeOfDay? scheduleTime;
+  final List<String> deviceIds;
+  final Map<String, Map<String, dynamic>>? deviceSettings;
+  final bool isActive;
+  final List<String>? deviceImageUrls;
+
+  Scene({
+    required this.id,
+    required this.name,
+    this.scheduleTime,
+    required this.deviceIds,
+    this.deviceSettings,
+    required this.isActive,
+    this.deviceImageUrls,
+  });
+
+  // Create Scene from Group (for compatibility)
+  factory Scene.fromGroup(Group group) {
+    return Scene(
+      id: group.id,
+      name: group.name,
+      deviceIds: group.deviceIds,
+      isActive: group.isActive,
+      deviceImageUrls: null,
+    );
+  }
+}
+
 class SceneCard extends StatelessWidget {
   final Scene scene;
+  final VoidCallback? onTap;
 
-  const SceneCard({Key? key, required this.scene}) : super(key: key);
+  const SceneCard({Key? key, required this.scene, this.onTap})
+    : super(key: key);
+
+  // Compatibility constructor for Group objects
+  factory SceneCard.fromGroup(Group group, {Key? key, VoidCallback? onTap}) {
+    return SceneCard(key: key, scene: Scene.fromGroup(group), onTap: onTap);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +118,9 @@ class SceneCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            formatTimeOfDay(scene.scheduleTime),
+                            scene.scheduleTime != null
+                                ? '${scene.scheduleTime!.hour}:${scene.scheduleTime!.minute.toString().padLeft(2, '0')}'
+                                : 'Not scheduled',
                             style: TextStyle(
                               color:
                                   scene.isActive ? Colors.white70 : Colors.grey,
@@ -92,7 +133,7 @@ class SceneCard extends StatelessWidget {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      homeProvider.toggleSceneState(scene.id);
+                      // homeProvider.toggleSceneState(scene.id);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor:
@@ -141,14 +182,14 @@ class SceneCard extends StatelessWidget {
                     child: ListView(
                       scrollDirection: Axis.horizontal,
                       children:
-                          scene.deviceImageUrls.length > 3
+                          (scene.deviceImageUrls?.length ?? 0) > 3
                               ? _buildDeviceImages(
-                                scene.deviceImageUrls.take(3).toList(),
-                                scene.deviceImageUrls.length - 3,
+                                scene.deviceImageUrls!.take(3).toList(),
+                                scene.deviceImageUrls!.length - 3,
                                 scene.isActive,
                               )
                               : _buildDeviceImages(
-                                scene.deviceImageUrls,
+                                scene.deviceImageUrls ?? [],
                                 0,
                                 scene.isActive,
                               ),
@@ -178,7 +219,7 @@ class SceneCard extends StatelessWidget {
                   Switch(
                     value: scene.isActive,
                     onChanged: (value) {
-                      homeProvider.toggleSceneState(scene.id);
+                      // homeProvider.toggleSceneState(scene.id);
                     },
                     activeColor: Colors.white,
                     inactiveThumbColor: AppColors.primaryBlue,

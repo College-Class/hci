@@ -64,8 +64,8 @@ class _LoginScreenState extends State<LoginScreen>
           setState(() {
             _isLoading = false;
           });
-          // Navigate to home screen using named route
-          Navigator.of(context).pushReplacementNamed('/home');
+          // Navigate to main navigation screen
+          Navigator.of(context).pushReplacementNamed('/main');
         }
       } catch (e) {
         if (mounted) {
@@ -100,8 +100,8 @@ class _LoginScreenState extends State<LoginScreen>
         setState(() {
           _isLoading = false;
         });
-        // Navigate to home screen
-        Navigator.of(context).pushReplacementNamed('/home');
+        // Navigate to main navigation screen
+        Navigator.of(context).pushReplacementNamed('/main');
       }
     } catch (e) {
       if (mounted) {
@@ -134,8 +134,8 @@ class _LoginScreenState extends State<LoginScreen>
         setState(() {
           _isLoading = false;
         });
-        // Navigate to home screen
-        Navigator.of(context).pushReplacementNamed('/home');
+        // Navigate to main navigation screen
+        Navigator.of(context).pushReplacementNamed('/main');
       }
     } catch (e) {
       if (mounted) {
@@ -168,29 +168,6 @@ class _LoginScreenState extends State<LoginScreen>
                   Center(
                     child: Column(
                       children: [
-                        Container(
-                          height: 80,
-                          width: 80,
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryBlue,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primaryBlue.withOpacity(0.3),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                                spreadRadius: 4,
-                              ),
-                            ],
-                          ),
-                          child: const Center(
-                            child: Icon(
-                              Icons.home,
-                              color: Colors.white,
-                              size: 48,
-                            ),
-                          ),
-                        ),
                         const SizedBox(height: 24),
                         const Text(
                           'Welcome Back!',
@@ -303,11 +280,12 @@ class _LoginScreenState extends State<LoginScreen>
                                 ),
 
                                 // Forgot password text
-                                TextButton(
-                                  onPressed: () {
-                                    // Navigate to forgot password screen
-                                  },
-                                  child: const Text('Forgot password?'),
+                                const Text(
+                                  'Forgot password?',
+                                  style: TextStyle(
+                                    color: AppColors.primaryBlue,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ],
                             ),

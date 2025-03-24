@@ -10,6 +10,13 @@ import 'screens/home_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/room_detail_screen.dart';
 import 'screens/device_detail_screen.dart';
+import 'screens/devices_screen.dart';
+import 'screens/rooms_screen.dart';
+import 'screens/ai_chat_screen.dart';
+import 'screens/help_support_screen.dart';
+import 'screens/settings_screen.dart';
+import 'screens/main_navigation_screen.dart';
+import 'screens/splash_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -50,6 +57,19 @@ class MyApp extends StatelessWidget {
             ),
           ),
 
+          textTheme: TextTheme(
+            headlineLarge: GoogleFonts.poppins(),
+            headlineMedium: GoogleFonts.poppins(),
+            headlineSmall: GoogleFonts.poppins(),
+            bodyLarge: GoogleFonts.poppins(),
+            bodyMedium: GoogleFonts.poppins(),
+            bodySmall: GoogleFonts.poppins(),
+            displayMedium: GoogleFonts.poppins(),
+            displaySmall: GoogleFonts.poppins(),
+            labelLarge: GoogleFonts.poppins(),
+            labelMedium: GoogleFonts.poppins(),
+            labelSmall: GoogleFonts.poppins(),
+          ),
           // AppBar theme
           appBarTheme: const AppBarTheme(
             backgroundColor: Colors.transparent,
@@ -166,7 +186,7 @@ class MyApp extends StatelessWidget {
             dividerColor: Colors.transparent,
           ),
         ),
-        initialRoute: '/login',
+        initialRoute: '/splash',
         onGenerateRoute: (settings) {
           // Handle dynamic routing
           if (settings.name == '/room_detail') {
@@ -179,15 +199,29 @@ class MyApp extends StatelessWidget {
             return MaterialPageRoute(
               builder: (context) => DeviceDetailScreen(device: device),
             );
+          } else if (settings.name == '/main') {
+            // Handle initialIndex for MainNavigationScreen
+            final int initialIndex = settings.arguments as int? ?? 0;
+            return MaterialPageRoute(
+              builder:
+                  (context) => MainNavigationScreen(initialIndex: initialIndex),
+            );
           }
 
           // Default routes
           return null;
         },
+        // home: HelpSupportScreen(),
         routes: {
+          '/splash': (context) => const SplashScreen(),
           '/login': (context) => const LoginScreen(),
           '/home': (context) => const HomeScreen(),
           '/profile': (context) => const ProfileScreen(),
+          '/devices': (context) => const DevicesScreen(),
+          '/rooms': (context) => const RoomsScreen(),
+          '/ai_chat': (context) => const AIChatScreen(),
+          '/help_support': (context) => const HelpSupportScreen(),
+          '/settings': (context) => const SettingsScreen(),
         },
       ),
     );

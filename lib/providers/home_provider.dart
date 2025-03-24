@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/device_model.dart';
 import '../models/room_model.dart';
-import '../models/scene_model.dart';
+import '../models/group_model.dart';
 import '../models/user_model.dart';
 
 class HomeProvider with ChangeNotifier {
@@ -11,7 +11,7 @@ class HomeProvider with ChangeNotifier {
     name: 'User',
     email: 'user@example.com',
     roomIds: ['rm001', 'rm002', 'rm003', 'rm004'],
-    sceneIds: ['sc001'],
+    groupIds: ['gr001'],
     preferences: {'darkMode': false, 'notifications': true},
   );
 
@@ -21,7 +21,8 @@ class HomeProvider with ChangeNotifier {
       id: 'rm001',
       name: 'Living room',
       deviceIds: ['dev001', 'dev002', 'dev003', 'dev004'],
-      imageUrl: 'assets/images/living_room.jpg',
+      imageUrl:
+          'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=1000&auto=format&fit=crop',
       totalConsumption: 300,
       totalDevices: 8,
       activeDevices: 5,
@@ -31,7 +32,8 @@ class HomeProvider with ChangeNotifier {
       id: 'rm002',
       name: 'Bedroom',
       deviceIds: ['dev005', 'dev006'],
-      imageUrl: 'assets/images/bedroom.jpg',
+      imageUrl:
+          'https://images.unsplash.com/photo-1540518614846-7eded433c457?q=80&w=1000&auto=format&fit=crop',
       totalConsumption: 300,
       totalDevices: 8,
       activeDevices: 5,
@@ -41,7 +43,8 @@ class HomeProvider with ChangeNotifier {
       id: 'rm003',
       name: 'Kitchen',
       deviceIds: ['dev007', 'dev008'],
-      imageUrl: 'assets/images/kitchen.jpg',
+      imageUrl:
+          'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?q=80&w=1000&auto=format&fit=crop',
       totalConsumption: 300,
       totalDevices: 8,
       activeDevices: 5,
@@ -51,7 +54,8 @@ class HomeProvider with ChangeNotifier {
       id: 'rm004',
       name: 'Bathroom',
       deviceIds: ['dev009', 'dev010'],
-      imageUrl: 'assets/images/bathroom.jpg',
+      imageUrl:
+          'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=1000&auto=format&fit=crop',
       totalConsumption: 300,
       totalDevices: 8,
       activeDevices: 5,
@@ -71,7 +75,8 @@ class HomeProvider with ChangeNotifier {
       isOn: true,
       currentConsumption: 1.3,
       totalConsumption: 172,
-      imageUrl: 'assets/images/smart_light.jpg',
+      imageUrl:
+          'https://images.unsplash.com/photo-1555663823-23e8867f739c?q=80&w=640&auto=format&fit=crop',
       lastUsed: DateTime.now(),
       timeUsed: const Duration(hours: 2, minutes: 32),
     ),
@@ -85,7 +90,8 @@ class HomeProvider with ChangeNotifier {
       isOn: true,
       currentConsumption: 1.3,
       totalConsumption: 172,
-      imageUrl: 'assets/images/air_conditioner.jpg',
+      imageUrl:
+          'https://images.unsplash.com/photo-1652227053304-d1efa6608d97?q=80&w=640&auto=format&fit=crop',
       lastUsed: DateTime.now(),
       timeUsed: const Duration(hours: 2, minutes: 32),
       additionalSettings: {
@@ -104,7 +110,8 @@ class HomeProvider with ChangeNotifier {
       isOn: true,
       currentConsumption: 0.5,
       totalConsumption: 87,
-      imageUrl: 'assets/images/fan.jpg',
+      imageUrl:
+          'https://images.unsplash.com/photo-1565151443833-29bf2ba5dd8d?q=80&w=640&auto=format&fit=crop',
       lastUsed: DateTime.now(),
       timeUsed: const Duration(hours: 2, minutes: 24),
     ),
@@ -118,30 +125,38 @@ class HomeProvider with ChangeNotifier {
       isOn: false,
       currentConsumption: 0,
       totalConsumption: 145,
-      imageUrl: 'assets/images/tv.jpg',
+      imageUrl:
+          'https://images.unsplash.com/photo-1593784991095-a205069470b6?q=80&w=640&auto=format&fit=crop',
       lastUsed: DateTime.now(),
       timeUsed: const Duration(hours: 2, minutes: 24),
     ),
   };
 
-  // Mock scenes data
-  final Map<String, Scene> _scenes = {
-    'sc001': Scene(
-      id: 'sc001',
-      name: 'Daily Scene',
-      scheduleTime: const TimeOfDay(hour: 19, minute: 0),
+  // Mock groups data (renamed from scenes)
+  final Map<String, Group> _groups = {
+    'gr001': Group(
+      id: 'gr001',
+      name: 'Morning Routine',
+      description: 'Activates all morning devices',
+      type: 'morning',
       deviceIds: ['dev001', 'dev002', 'dev003'],
-      deviceSettings: {
-        'dev001': {'brightness': 70, 'color': 'warm'},
-        'dev002': {'mode': 'cool', 'temperature': 24},
-        'dev003': {'speed': 2},
-      },
       isActive: true,
-      deviceImageUrls: [
-        'assets/images/smart_light.jpg',
-        'assets/images/air_conditioner.jpg',
-        'assets/images/fan.jpg',
-      ],
+    ),
+    'gr002': Group(
+      id: 'gr002',
+      name: 'Night Mode',
+      description: 'Dims lights and sets comfortable temperature',
+      type: 'night',
+      deviceIds: ['dev001', 'dev002'],
+      isActive: false,
+    ),
+    'gr003': Group(
+      id: 'gr003',
+      name: 'Movie Time',
+      description: 'Perfect lighting for movie watching',
+      type: 'movie',
+      deviceIds: ['dev001', 'dev004'],
+      isActive: false,
     ),
   };
 
@@ -149,7 +164,103 @@ class HomeProvider with ChangeNotifier {
   User get currentUser => _currentUser;
   List<Room> get rooms => _rooms.values.toList();
   List<Device> get devices => _devices.values.toList();
-  List<Scene> get scenes => _scenes.values.toList();
+  List<Group> get groups => _groups.values.toList();
+
+  // Mock data for power consumption graph
+  List<Map<String, dynamic>> get weeklyConsumptionData {
+    // Generate data for the last 7 days
+    final now = DateTime.now();
+    List<Map<String, dynamic>> result = [];
+
+    for (int i = 6; i >= 0; i--) {
+      final date = now.subtract(Duration(days: i));
+      // Generate a value between 1.0 and 4.5
+      final consumptionValue = 1.0 + (date.day % 5) * 0.7;
+
+      result.add({
+        'date': date,
+        'day': _getWeekdayShort(date.weekday),
+        'consumption': consumptionValue,
+      });
+    }
+
+    return result;
+  }
+
+  // Mock data for monthly power consumption
+  List<Map<String, dynamic>> get monthlyConsumptionData {
+    // Generate data for the last 6 months
+    final now = DateTime.now();
+    List<Map<String, dynamic>> result = [];
+
+    for (int i = 5; i >= 0; i--) {
+      final date = DateTime(now.year, now.month - i, 1);
+      // Generate a value between 20 and 45 kWh for monthly consumption
+      final consumptionValue = 20.0 + (date.month % 6) * 5.0;
+
+      result.add({
+        'date': date,
+        'month': _getMonthShort(date.month),
+        'consumption': consumptionValue,
+      });
+    }
+
+    return result;
+  }
+
+  // Helper to get shortened weekday name
+  String _getWeekdayShort(int weekday) {
+    switch (weekday) {
+      case 1:
+        return 'Mon';
+      case 2:
+        return 'Tue';
+      case 3:
+        return 'Wed';
+      case 4:
+        return 'Thu';
+      case 5:
+        return 'Fri';
+      case 6:
+        return 'Sat';
+      case 7:
+        return 'Sun';
+      default:
+        return '';
+    }
+  }
+
+  // Helper to get shortened month name
+  String _getMonthShort(int month) {
+    switch (month) {
+      case 1:
+        return 'Jan';
+      case 2:
+        return 'Feb';
+      case 3:
+        return 'Mar';
+      case 4:
+        return 'Apr';
+      case 5:
+        return 'May';
+      case 6:
+        return 'Jun';
+      case 7:
+        return 'Jul';
+      case 8:
+        return 'Aug';
+      case 9:
+        return 'Sep';
+      case 10:
+        return 'Oct';
+      case 11:
+        return 'Nov';
+      case 12:
+        return 'Dec';
+      default:
+        return '';
+    }
+  }
 
   List<Device> getDevicesForRoom(String roomId) {
     return _devices.values.where((device) => device.room == roomId).toList();
@@ -163,23 +274,73 @@ class HomeProvider with ChangeNotifier {
     return _devices[deviceId];
   }
 
-  Scene? getSceneById(String sceneId) {
-    return _scenes[sceneId];
+  Group? getGroupById(String groupId) {
+    return _groups[groupId];
   }
 
   // Methods to update data
   void toggleDeviceState(String deviceId) {
     final device = _devices[deviceId];
     if (device != null) {
-      _devices[deviceId] = device.copyWith(isOn: !device.isOn);
+      final bool newState = !device.isOn;
+
+      // Update the device's state
+      _devices[deviceId] = device.copyWith(
+        isOn: newState,
+        currentConsumption: newState ? _getDeviceConsumption(device) : 0.0,
+        lastUsed: newState ? DateTime.now() : device.lastUsed,
+      );
+
+      // Update the active device count in the room
+      final room = _rooms[device.room];
+      if (room != null) {
+        final activeDevices =
+            getDevicesForRoom(device.room).where((d) => d.isOn).length;
+        _rooms[device.room] = room.copyWith(activeDevices: activeDevices);
+      }
+
       notifyListeners();
     }
   }
 
-  void toggleSceneState(String sceneId) {
-    final scene = _scenes[sceneId];
-    if (scene != null) {
-      _scenes[sceneId] = scene.copyWith(isActive: !scene.isActive);
+  // Helper method to get appropriate consumption based on device type
+  double _getDeviceConsumption(Device device) {
+    switch (device.type) {
+      case DeviceType.airConditioner:
+        // AC consumes more power
+        return 2.4;
+      case DeviceType.smartLight:
+        // Smart light is efficient
+        final int brightness =
+            device.additionalSettings['brightness'] as int? ?? 70;
+        return 0.3 +
+            (brightness / 100) * 1.0; // Base 0.3W + up to 1.0W more at 100%
+      case DeviceType.television:
+        // TV consumption
+        return 1.8;
+      case DeviceType.fan:
+        // Fan consumption - based on speed
+        final int speed = device.additionalSettings['speed'] as int? ?? 3;
+        return 0.5 + (speed / 5) * 0.5; // 0.5W to 1.0W based on speed
+      default:
+        return 1.0;
+    }
+  }
+
+  void toggleGroupState(String groupId) {
+    final group = _groups[groupId];
+    if (group != null) {
+      final newState = !group.isActive;
+      _groups[groupId] = group.copyWith(isActive: newState);
+
+      // Toggle all devices in the group
+      for (final deviceId in group.deviceIds) {
+        final device = _devices[deviceId];
+        if (device != null && device.isOn != newState) {
+          toggleDeviceState(deviceId);
+        }
+      }
+
       notifyListeners();
     }
   }
@@ -191,17 +352,93 @@ class HomeProvider with ChangeNotifier {
         ...device.additionalSettings,
         ...newSettings,
       };
-      _devices[deviceId] = device.copyWith(additionalSettings: updatedSettings);
+
+      double newConsumption = device.currentConsumption;
+      if (device.isOn) {
+        // Update consumption based on new settings
+        if (device.type == DeviceType.smartLight &&
+            newSettings.containsKey('brightness')) {
+          final int brightness = newSettings['brightness'] as int;
+          newConsumption = 0.3 + (brightness / 100) * 1.0;
+        } else if (device.type == DeviceType.fan &&
+            newSettings.containsKey('speed')) {
+          final int speed = newSettings['speed'] as int;
+          newConsumption = 0.5 + (speed / 5) * 0.5;
+        }
+      }
+
+      _devices[deviceId] = device.copyWith(
+        additionalSettings: updatedSettings,
+        currentConsumption: newConsumption,
+      );
+
       notifyListeners();
     }
   }
 
+  // Update device usage time - should be called periodically in a real app
+  void updateDeviceUsageTime(String deviceId) {
+    final device = _devices[deviceId];
+    if (device != null && device.isOn) {
+      final now = DateTime.now();
+      final difference = now.difference(device.lastUsed);
+
+      // Add the time difference to the total usage
+      final newTimeUsed = Duration(
+        seconds: device.timeUsed.inSeconds + difference.inSeconds,
+      );
+
+      // Update the consumption based on time used
+      final additionalConsumption =
+          (difference.inMinutes / 60) * device.currentConsumption;
+
+      _devices[deviceId] = device.copyWith(
+        lastUsed: now,
+        timeUsed: newTimeUsed,
+        totalConsumption: device.totalConsumption + additionalConsumption,
+      );
+    }
+  }
+
+  // Update all active devices' usage time
+  void updateAllDevicesUsage() {
+    for (final device in devices.where((d) => d.isOn)) {
+      updateDeviceUsageTime(device.id);
+    }
+    notifyListeners();
+  }
+
+  // Get filtered devices by type and search query
+  List<Device> getFilteredDevices({DeviceType? type, String? searchQuery}) {
+    return devices.where((device) {
+      // Apply type filter if specified
+      if (type != null && device.type != type) {
+        return false;
+      }
+
+      // Apply search query if specified
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        final query = searchQuery.toLowerCase();
+        return device.name.toLowerCase().contains(query) ||
+            device.model.toLowerCase().contains(query);
+      }
+
+      return true;
+    }).toList();
+  }
+
   double get todayConsumption {
-    return 25.0; // Mock value
+    double total = 0.0;
+    for (final device in devices) {
+      if (device.isOn) {
+        total += device.currentConsumption;
+      }
+    }
+    return total;
   }
 
   double get totalConsumption {
-    return 500.0; // Mock value
+    return devices.fold(0.0, (sum, device) => sum + device.totalConsumption);
   }
 
   int get airConditionersCount {
@@ -226,7 +463,7 @@ class HomeProvider with ChangeNotifier {
         email: email,
         profileImageUrl: 'assets/images/user_profile.jpg',
         roomIds: [], // Empty list for new user
-        sceneIds: [], // Empty list for new user
+        groupIds: [], // Empty list for new user
         preferences: {}, // Default preferences
       );
       notifyListeners();
@@ -245,7 +482,7 @@ class HomeProvider with ChangeNotifier {
         email: email,
         profileImageUrl: 'assets/images/user_profile.jpg',
         roomIds: [], // Empty list for new user
-        sceneIds: [], // Empty list for new user
+        groupIds: [], // Empty list for new user
         preferences: {}, // Default preferences
       );
       notifyListeners();
@@ -264,7 +501,7 @@ class HomeProvider with ChangeNotifier {
         email: 'google_user@example.com',
         profileImageUrl: 'assets/images/user_profile.jpg',
         roomIds: [], // Empty list for new user
-        sceneIds: [], // Empty list for new user
+        groupIds: [], // Empty list for new user
         preferences: {}, // Default preferences
       );
       notifyListeners();
@@ -283,7 +520,7 @@ class HomeProvider with ChangeNotifier {
         email: 'apple_user@example.com',
         profileImageUrl: 'assets/images/user_profile.jpg',
         roomIds: [], // Empty list for new user
-        sceneIds: [], // Empty list for new user
+        groupIds: [], // Empty list for new user
         preferences: {}, // Default preferences
       );
       notifyListeners();

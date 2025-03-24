@@ -4,7 +4,7 @@ class User {
   final String email;
   final String? profileImageUrl;
   final List<String> roomIds;
-  final List<String> sceneIds;
+  final List<String> groupIds;
   final Map<String, dynamic> preferences;
   final bool isPremium;
 
@@ -14,7 +14,7 @@ class User {
     required this.email,
     this.profileImageUrl,
     required this.roomIds,
-    required this.sceneIds,
+    required this.groupIds,
     required this.preferences,
     this.isPremium = false,
   });
@@ -25,7 +25,7 @@ class User {
     String? email,
     String? profileImageUrl,
     List<String>? roomIds,
-    List<String>? sceneIds,
+    List<String>? groupIds,
     Map<String, dynamic>? preferences,
     bool? isPremium,
   }) {
@@ -35,7 +35,7 @@ class User {
       email: email ?? this.email,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       roomIds: roomIds ?? this.roomIds,
-      sceneIds: sceneIds ?? this.sceneIds,
+      groupIds: groupIds ?? this.groupIds,
       preferences: preferences ?? this.preferences,
       isPremium: isPremium ?? this.isPremium,
     );

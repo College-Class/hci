@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../constants/app_constants.dart';
 import '../models/device_model.dart';
 import '../providers/home_provider.dart';
@@ -55,10 +56,68 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
   @override
   Widget build(BuildContext context) {
     final homeProvider = Provider.of<HomeProvider>(context);
+    final currentDevice = homeProvider.getDeviceById(widget.device.id);
+
+    // Needed to get live updates of the device
+    if (currentDevice == null) {
+      return const Scaffold(body: Center(child: Text('Device not found')));
+    }
 
     return Scaffold(
       backgroundColor: AppColors.primaryGrey,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.3),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          currentDevice.name,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        titleSpacing: 0,
+        actions: [
+          // Power toggle
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: GestureDetector(
+              onTap: () {
+                homeProvider.toggleDeviceState(currentDevice.id);
+              },
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color:
+                      currentDevice.isOn
+                          ? AppColors.successGreen.withOpacity(0.8)
+                          : Colors.red.withOpacity(0.8),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  currentDevice.isOn ? Icons.power : Icons.power_off,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      extendBodyBehindAppBar: true,
       body: SafeArea(
+        top: false,
         child: SingleChildScrollView(
           child: SizedBox(
             width: MediaQuery.of(context).size.width,
@@ -67,18 +126,18 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
               children: [
                 // Header with device image
                 SizedBox(
-                  height: 240,
+                  height: 300,
                   width: double.infinity,
                   child: Stack(
                     children: [
                       // Device image
                       Positioned.fill(
                         child: Hero(
-                          tag: 'device_image_${widget.device.id}',
+                          tag: 'device_image_${currentDevice.id}',
                           child: Container(
                             decoration: BoxDecoration(
                               color:
-                                  widget.device.isOn
+                                  currentDevice.isOn
                                       ? AppColors.primaryBlue.withOpacity(0.8)
                                       : Colors.grey.withOpacity(0.3),
                               borderRadius: const BorderRadius.only(
@@ -91,21 +150,47 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
                                 bottomLeft: Radius.circular(24),
                                 bottomRight: Radius.circular(24),
                               ),
-                              child: Image.asset(
-                                widget.device.imageUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder:
-                                    (context, error, stackTrace) => Center(
-                                      child: Icon(
-                                        widget.device.icon,
-                                        size: 80,
-                                        color:
-                                            widget.device.isOn
-                                                ? Colors.white70
-                                                : Colors.grey,
+                              child:
+                                  currentDevice.imageUrl.startsWith('http')
+                                      ? CachedNetworkImage(
+                                        imageUrl: currentDevice.imageUrl,
+                                        fit: BoxFit.cover,
+                                        placeholder:
+                                            (context, url) => Center(
+                                              child: CircularProgressIndicator(
+                                                color: AppColors.primaryBlue,
+                                              ),
+                                            ),
+                                        errorWidget:
+                                            (context, url, error) => Center(
+                                              child: Icon(
+                                                _getDeviceIcon(currentDevice),
+                                                size: 80,
+                                                color:
+                                                    currentDevice.isOn
+                                                        ? Colors.white70
+                                                        : Colors.grey,
+                                              ),
+                                            ),
+                                      )
+                                      : Image.asset(
+                                        currentDevice.imageUrl,
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                Center(
+                                                  child: Icon(
+                                                    _getDeviceIcon(
+                                                      currentDevice,
+                                                    ),
+                                                    size: 80,
+                                                    color:
+                                                        currentDevice.isOn
+                                                            ? Colors.white70
+                                                            : Colors.grey,
+                                                  ),
+                                                ),
                                       ),
-                                    ),
-                              ),
                             ),
                           ),
                         ),
@@ -142,17 +227,6 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              widget.device.name,
-                              style: const TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                shadows: [
-                                  Shadow(color: Colors.black45, blurRadius: 5),
-                                ],
-                              ),
-                            ),
                             const SizedBox(height: 8),
                             Row(
                               children: [
@@ -168,13 +242,13 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
                                   child: Row(
                                     children: [
                                       Icon(
-                                        widget.device.icon,
+                                        _getDeviceIcon(currentDevice),
                                         color: Colors.white,
                                         size: 16,
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
-                                        widget.device.model,
+                                        currentDevice.model,
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 14,
@@ -192,7 +266,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
                                   ),
                                   decoration: BoxDecoration(
                                     color:
-                                        widget.device.isOn
+                                        currentDevice.isOn
                                             ? AppColors.successGreen
                                                 .withOpacity(0.8)
                                             : Colors.red.withOpacity(0.8),
@@ -201,7 +275,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
                                   child: Row(
                                     children: [
                                       Icon(
-                                        widget.device.isOn
+                                        currentDevice.isOn
                                             ? Icons.power
                                             : Icons.power_off,
                                         color: Colors.white,
@@ -209,7 +283,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
-                                        widget.device.isOn ? 'On' : 'Off',
+                                        currentDevice.isOn ? 'On' : 'Off',
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 14,
@@ -224,666 +298,46 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
                           ],
                         ),
                       ),
-
-                      // Back button and power toggle
-                      Positioned(
-                        top: 16,
-                        left: 16,
-                        right: 16,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            // Back button
-                            GestureDetector(
-                              onTap: () => Navigator.pop(context),
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.3),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.arrow_back,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-
-                            // Power toggle button
-                            GestureDetector(
-                              onTap: () {
-                                homeProvider.toggleDeviceState(
-                                  widget.device.id,
-                                );
-                              },
-                              child: Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color:
-                                      widget.device.isOn
-                                          ? AppColors.successGreen.withOpacity(
-                                            0.8,
-                                          )
-                                          : Colors.red.withOpacity(0.8),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Center(
-                                  child: Icon(
-                                    widget.device.isOn
-                                        ? Icons.power_settings_new
-                                        : Icons.power_off,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: AppSizes.paddingLarge),
 
-                // Usage stats
+                // Device status
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Card(
-                    elevation: AppSizes.cardElevation,
-                    shadowColor: AppColors.shadowColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        AppSizes.borderRadius,
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Usage Statistics',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Device usage and status info
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.timer_outlined,
-                                          size: 18,
-                                          color: AppColors.textGrey,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        const Text(
-                                          'Time Active',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: AppColors.textGrey,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      '${widget.device.timeUsed.inHours}h ${widget.device.timeUsed.inMinutes.remainder(60)}m',
-                                      style: const TextStyle(
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              Container(
-                                height: 50,
-                                width: 1,
-                                color: Colors.grey[300],
-                              ),
-
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(left: 16),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.bolt,
-                                            size: 18,
-                                            color: Colors.amber,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          const Text(
-                                            'Power Usage',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: AppColors.textGrey,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        '${widget.device.currentConsumption}W',
-                                        style: const TextStyle(
-                                          fontSize: 22,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.paddingMedium,
                   ),
+                  child: _buildDeviceStatusCard(currentDevice),
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSizes.paddingLarge),
 
-                // Schedule section
+                // Device settings
+                _buildDeviceSettings(homeProvider),
+
+                const SizedBox(height: AppSizes.paddingLarge),
+
+                // Energy usage
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Card(
-                    elevation: AppSizes.cardElevation,
-                    shadowColor: AppColors.shadowColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        AppSizes.borderRadius,
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Schedule title and toggle
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(
-                                    Icons.schedule,
-                                    color: AppColors.primaryBlue,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'Schedule',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Switch(
-                                value: true,
-                                onChanged: (value) {
-                                  // Toggle schedule
-                                },
-                                activeColor: AppColors.primaryBlue,
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // From-To time selectors
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryGrey,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                // From time
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'From',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: AppColors.textGrey,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      GestureDetector(
-                                        onTap: () async {
-                                          final TimeOfDay? picked =
-                                              await showTimePicker(
-                                                context: context,
-                                                initialTime: _startTime,
-                                              );
-                                          if (picked != null &&
-                                              picked != _startTime) {
-                                            setState(() {
-                                              _startTime = picked;
-                                            });
-                                          }
-                                        },
-                                        child: Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.access_time,
-                                              size: 16,
-                                              color: AppColors.primaryBlue,
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              '${_startTime.hour}:${_startTime.minute.toString().padLeft(2, '0')} ${_startTime.period == DayPeriod.am ? 'AM' : 'PM'}',
-                                              style: const TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                                // Divider
-                                Container(
-                                  height: 40,
-                                  width: 1,
-                                  color: Colors.grey[300],
-                                ),
-
-                                // To time
-                                Expanded(
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(left: 16),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          'To',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: AppColors.textGrey,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        GestureDetector(
-                                          onTap: () async {
-                                            final TimeOfDay? picked =
-                                                await showTimePicker(
-                                                  context: context,
-                                                  initialTime: _endTime,
-                                                );
-                                            if (picked != null &&
-                                                picked != _endTime) {
-                                              setState(() {
-                                                _endTime = picked;
-                                              });
-                                            }
-                                          },
-                                          child: Row(
-                                            children: [
-                                              const Icon(
-                                                Icons.access_time,
-                                                size: 16,
-                                                color: AppColors.primaryBlue,
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                '${_endTime.hour}:${_endTime.minute.toString().padLeft(2, '0')} ${_endTime.period == DayPeriod.am ? 'PM' : 'AM'}',
-                                                style: const TextStyle(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // Days selection
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryGrey,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Days',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: AppColors.textGrey,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                SizedBox(
-                                  height: 40,
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      _buildDayCircle('M', true),
-                                      _buildDayCircle('T', true),
-                                      _buildDayCircle('W', true),
-                                      _buildDayCircle('T', true),
-                                      _buildDayCircle('F', true),
-                                      _buildDayCircle('S', false),
-                                      _buildDayCircle('S', false),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.paddingMedium,
                   ),
+                  child: _buildEnergyUsageCard(currentDevice),
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSizes.paddingLarge),
 
-                // Device specific controls
-                if (widget.device.type == DeviceType.smartLight) ...[
-                  // Brightness slider for smart lights
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Card(
-                      elevation: AppSizes.cardElevation,
-                      shadowColor: AppColors.shadowColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          AppSizes.borderRadius,
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.lightbulb_outline,
-                                  color: Colors.amber,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'Brightness',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const Spacer(),
-                                Text(
-                                  '${_brightness.round()}%',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.primaryBlue,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.brightness_low,
-                                  size: 20,
-                                  color: AppColors.textGrey,
-                                ),
-                                Expanded(
-                                  child: Slider(
-                                    value: _brightness,
-                                    min: 0,
-                                    max: 100,
-                                    divisions: 10,
-                                    label: _brightness.round().toString(),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _brightness = value;
-                                      });
-                                      homeProvider.updateDeviceSettings(
-                                        widget.device.id,
-                                        {'brightness': value.round()},
-                                      );
-                                    },
-                                  ),
-                                ),
-                                const Icon(
-                                  Icons.brightness_high,
-                                  size: 20,
-                                  color: AppColors.textGrey,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ] else if (widget.device.type == DeviceType.airConditioner) ...[
-                  // Mode selection for air conditioners
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Card(
-                      elevation: AppSizes.cardElevation,
-                      shadowColor: AppColors.shadowColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          AppSizes.borderRadius,
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.mode,
-                                  color: AppColors.primaryBlue,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'Mode Selection',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              width: double.infinity,
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceAround,
-                                children: [
-                                  _buildModeButton('Heat', Colors.red[300]!),
-                                  _buildModeButton('Cold', Colors.blue[300]!),
-                                  _buildModeButton('Air', Colors.green[300]!),
-                                  _buildModeButton(
-                                    'Humid',
-                                    Colors.purple[300]!,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-
-                const SizedBox(height: 16),
-
-                // Energy consumption card
+                // Schedule panel (simplified)
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Card(
-                    elevation: AppSizes.cardElevation,
-                    shadowColor: AppColors.shadowColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        AppSizes.borderRadius,
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.bolt,
-                                color: Colors.amber,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              const Text(
-                                'Energy Consumption',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Energy consumption graph placeholder
-                          Container(
-                            height: 180,
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryGrey,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: const EdgeInsets.all(16),
-                            child: Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(
-                                    Icons.insert_chart_outlined,
-                                    size: 48,
-                                    color: AppColors.textGrey,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Consumption History',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: AppColors.textGrey,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Column(
-                                        children: [
-                                          Text(
-                                            'Today',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: AppColors.textGrey,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            '${widget.device.currentConsumption * 3} Wh',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      Container(
-                                        height: 30,
-                                        width: 1,
-                                        margin: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                        ),
-                                        color: Colors.grey[300],
-                                      ),
-                                      Column(
-                                        children: [
-                                          Text(
-                                            'This Month',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: AppColors.textGrey,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            '${widget.device.totalConsumption} Wh',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.paddingMedium,
                   ),
+                  child: _buildScheduleCard(),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSizes.paddingLarge),
               ],
             ),
           ),
@@ -892,87 +346,446 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen>
     );
   }
 
-  Widget _buildDayCircle(String day, bool isSelected) {
+  Widget _buildDeviceStatusCard(Device device) {
     return Container(
-      width: 30,
-      height: 30,
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSizes.paddingLarge),
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: isSelected ? AppColors.primaryBlue : Colors.transparent,
-        border: Border.all(
-          color: isSelected ? AppColors.primaryBlue : Colors.grey,
-          width: 1,
-        ),
-      ),
-      child: Center(
-        child: Text(
-          day,
-          style: TextStyle(
-            color: isSelected ? Colors.white : AppColors.textGrey,
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(AppSizes.borderRadius),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowColor,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-        ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Device Status',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primaryDark,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Status indicator
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Status',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color:
+                              device.isOn ? AppColors.successGreen : Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        device.isOn ? 'Active' : 'Inactive',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color:
+                              device.isOn ? AppColors.successGreen : Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+
+              // Connection type
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Connection',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        device.connectionType == ConnectionType.wifi
+                            ? Icons.wifi
+                            : device.connectionType == ConnectionType.bluetooth
+                            ? Icons.bluetooth
+                            : Icons.settings_remote,
+                        size: 16,
+                        color: AppColors.primaryBlue,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        device.connectionType == ConnectionType.wifi
+                            ? 'Wi-Fi'
+                            : device.connectionType == ConnectionType.bluetooth
+                            ? 'Bluetooth'
+                            : 'Zigbee',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+
+              // Current consumption
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Power',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.bolt, size: 16, color: Colors.amber),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${device.currentConsumption} W',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          if (device.isOn) ...[
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 16),
+            Text(
+              _getStatusMessage(device),
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
 
-  Widget _buildModeButton(String mode, Color color) {
-    final isSelected = _selectedMode == mode;
+  String _getStatusMessage(Device device) {
+    switch (device.type) {
+      case DeviceType.airConditioner:
+        final mode = device.additionalSettings['mode'] as String? ?? 'Heat';
+        final temp = device.additionalSettings['temperature'] as int? ?? 24;
+        return 'Running in $mode mode at $temp°C';
+      case DeviceType.smartLight:
+        final brightness =
+            device.additionalSettings['brightness'] as int? ?? 70;
+        return 'Light is on at $brightness% brightness';
+      case DeviceType.fan:
+        final speed = device.additionalSettings['speed'] as int? ?? 3;
+        return 'Fan is running at speed $speed';
+      case DeviceType.television:
+        final source =
+            device.additionalSettings['source'] as String? ?? 'HDMI 1';
+        return 'TV is on $source input';
+      default:
+        return 'Device is running normally';
+    }
+  }
 
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedMode = mode;
-        });
-
-        // Update device settings in provider
-        Provider.of<HomeProvider>(
-          context,
-          listen: false,
-        ).updateDeviceSettings(widget.device.id, {'mode': mode});
-      },
+  Widget _buildEnergyUsageCard(Device device) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSizes.paddingLarge),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(AppSizes.borderRadius),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowColor,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AnimatedContainer(
-            duration: AppAnimations.shortDuration,
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: isSelected ? color : Colors.grey[200],
-              shape: BoxShape.circle,
-              boxShadow:
-                  isSelected
-                      ? [
-                        BoxShadow(
-                          color: color.withOpacity(0.4),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ]
-                      : null,
-            ),
-            child: Center(
-              child: Text(
-                mode[0],
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: isSelected ? Colors.white : Colors.black54,
-                ),
-              ),
+          const Text(
+            'Energy Usage',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primaryDark,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            mode,
-            style: TextStyle(
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              color: isSelected ? AppColors.primaryBlue : AppColors.textGrey,
-            ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildEnergyUsageItem(
+                'Current',
+                '${device.currentConsumption} W',
+                Icons.flash_on,
+                AppColors.primaryBlue,
+              ),
+              _buildEnergyUsageItem(
+                'Total',
+                '${device.totalConsumption.toStringAsFixed(1)} kWh',
+                Icons.insert_chart,
+                Colors.orange,
+              ),
+              _buildEnergyUsageItem(
+                'Active Time',
+                '${device.timeUsed.inHours}h ${device.timeUsed.inMinutes.remainder(60)}m',
+                Icons.access_time,
+                Colors.green,
+              ),
+            ],
+          ),
+
+          // Could add a Chart here in a more complete implementation
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEnergyUsageItem(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: color, size: 24),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 4),
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+      ],
+    );
+  }
+
+  Widget _buildScheduleCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSizes.paddingLarge),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(AppSizes.borderRadius),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowColor,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Schedule',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primaryDark,
+                ),
+              ),
+              Switch(
+                value: true, // Just a mock value
+                onChanged: (value) {
+                  // In a real app, this would toggle the schedule
+                },
+                activeColor: AppColors.primaryBlue,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Start Time',
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () async {
+                        final TimeOfDay? picked = await showTimePicker(
+                          context: context,
+                          initialTime: _startTime,
+                        );
+                        if (picked != null && picked != _startTime) {
+                          setState(() {
+                            _startTime = picked;
+                          });
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              _startTime.format(context),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const Icon(
+                              Icons.access_time,
+                              size: 20,
+                              color: Colors.grey,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'End Time',
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () async {
+                        final TimeOfDay? picked = await showTimePicker(
+                          context: context,
+                          initialTime: _endTime,
+                        );
+                        if (picked != null && picked != _endTime) {
+                          setState(() {
+                            _endTime = picked;
+                          });
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              _endTime.format(context),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const Icon(
+                              Icons.access_time,
+                              size: 20,
+                              color: Colors.grey,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () {
+              // In a real app, this would save the schedule
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Schedule saved'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+            child: const Text('Save Schedule'),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildDeviceSettings(HomeProvider homeProvider) {
+    // Implementation of _buildDeviceSettings method
+    // This method should return a widget that represents the device settings section
+    // For example, you can use a form to update device settings
+    return Container(); // Placeholder return, actual implementation needed
+  }
+
+  IconData _getDeviceIcon(Device device) {
+    switch (device.type) {
+      case DeviceType.smartLight:
+        return Icons.lightbulb_outline;
+      case DeviceType.airConditioner:
+        return Icons.ac_unit;
+      case DeviceType.television:
+        return Icons.tv;
+      case DeviceType.fan:
+        return Icons.toys;
+      default:
+        return Icons.devices_other;
+    }
   }
 }
